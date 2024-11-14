@@ -95,12 +95,7 @@
         });
       }
 
-      /**
-       * Autodesk.Viewing.Document.load() success callback.
-       * Proceeds with model initialization.
-       */
       function onDocumentLoadSuccess(doc) {
-        // A document contains references to 3D and 2D viewables.
         var viewables = Autodesk.Viewing.Document.getSubItemsWithProperties(
           doc.getRootItem(),
           { type: "geometry" },
@@ -111,7 +106,6 @@
           return;
         }
 
-        // Choose any of the available viewables
         var initialViewable = viewables[0];
         var svfUrl = doc.getViewablePath(initialViewable);
         var modelOptions = {
@@ -128,30 +122,40 @@
         );
       }
 
-      /**
-       * Autodesk.Viewing.Document.load() failure callback.
-       */
       function onDocumentLoadFailure(viewerErrorCode) {
         console.error("onDocumentLoadFailure() - errorCode:" + viewerErrorCode);
       }
 
-      /**
-       * viewer.loadModel() success callback.
-       * Invoked after the model's SVF has been initially loaded.
-       * It may trigger before any geometry has been downloaded and displayed on-screen.
-       */
       function onLoadModelSuccess(model) {
-        console.log("onLoadModelSuccess()!");
-        console.log("Validate model loaded: " + (viewer.model === model));
-        console.log(model);
+        console.log("Model loaded successfully!");
+        addSelectionListener();
       }
 
-      /**
-       * viewer.loadModel() failure callback.
-       * Invoked when there's an error fetching the SVF file.
-       */
       function onLoadModelError(viewerErrorCode) {
         console.error("onLoadModelError() - errorCode:" + viewerErrorCode);
+      }
+
+      function addSelectionListener() {
+        // Add an event listener to capture selection events
+        viewer.addEventListener(
+          Autodesk.Viewing.SELECTION_CHANGED_EVENT,
+          function (event) {
+            var selection = viewer.getSelection(); // Get selected object IDs
+
+            if (selection.length > 0) {
+              var dbId = selection[0]; // Get the first selected object
+              console.log("Selected object ID: " + dbId);
+
+              // Send the selected object ID back to Xamarin
+              if (
+                window.AndroidInterface &&
+                window.AndroidInterface.onModelObjectSelected
+              ) {
+                window.AndroidInterface.onModelObjectSelected(dbId.toString());
+              }
+            }
+          }
+        );
       }
     </script>
   </body>
