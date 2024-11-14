@@ -1,31 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/viewer3D.min.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Autodesk Forge Viewer</title>
+    <!-- Corrected Viewer Script URL with version 6.6.4 -->
+    <script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/6.6.4/viewer3D.min.js"></script>
   </head>
   <body>
-    <div id="forgeViewer" style="width: 100%; height: 100%"></div>
-    <script>
-      var options = {
-        env: "AutodeskProduction",
-        getAccessToken: function (onGetAccessToken) {
-          onGetAccessToken(window.accessToken, 3600); // Use window-scoped token variable
-        },
-      };
+    <!-- Container for the Forge Viewer -->
+    <div id="forgeViewer" style="width: 100%; height: 100vh"></div>
 
-      Autodesk.Viewing.Initializer(options, function () {
-        var viewerDiv = document.getElementById("forgeViewer");
-        var viewer = new Autodesk.Viewing.Private.GuiViewer3D(viewerDiv);
-        Autodesk.Viewing.Document.load(
-          "urn:" + window.modelUrn, // Use window-scoped URN variable
-          (doc) => {
-            var viewables = doc.getRoot().getDefaultGeometry();
-            viewer.start();
-            viewer.loadDocumentNode(doc, viewables);
-          },
-          (errorMsg) => console.error(errorMsg)
+    <script>
+      // Check if access token and model URN are defined
+      if (!window.accessToken || !window.modelUrn) {
+        console.error("Access Token or Model URN is missing!");
+        alert(
+          "Access Token or Model URN is missing! Please check your configuration."
         );
-      });
+      } else {
+        // Viewer initialization options
+        var options = {
+          env: "AutodeskProduction", // Specify environment
+          getAccessToken: function (onGetAccessToken) {
+            // Provide access token to the viewer
+            onGetAccessToken(window.accessToken, 3600); // Use window-scoped token variable
+          },
+        };
+
+        // Initialize the Autodesk Viewer
+        Autodesk.Viewing.Initializer(options, function () {
+          var viewerDiv = document.getElementById("forgeViewer"); // Get the viewer container
+          var viewer = new Autodesk.Viewing.GuiViewer3D(viewerDiv); // Create the viewer instance
+
+          // Load the model using the URN
+          Autodesk.Viewing.Document.load(
+            "urn:" + window.modelUrn, // Load model using URN (use window-scoped URN variable)
+            function (doc) {
+              var viewables = doc.getRoot().getDefaultGeometry(); // Get the default geometry
+              viewer.start(); // Start the viewer
+              viewer.loadDocumentNode(doc, viewables); // Load the document into the viewer
+            },
+            function (errorMsg) {
+              console.error("Error loading model: " + errorMsg); // Error handling
+              alert("Error loading model: " + errorMsg); // Show alert if model fails to load
+            }
+          );
+        });
+      }
     </script>
   </body>
 </html>
