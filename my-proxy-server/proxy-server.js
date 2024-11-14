@@ -36,7 +36,7 @@ app.get("/proxy", async (req, res) => {
     // Making the request to Autodesk API
     const response = await axios.get(
       `https://cdn.derivative.autodesk.com/derivativeservice/v2/manifest/${modelUrn}?domain=${encodeURIComponent(
-        "https://apk-host-git-main-pratiktimers-projects.vercel.app"
+        "https://test.nexgen.am"
       )}`,
       {
         headers: { Authorization: `Bearer ${accessToken}` },
