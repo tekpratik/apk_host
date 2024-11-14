@@ -18,7 +18,18 @@ app.get("/proxy", async (req, res) => {
 
   // Check if the modelUrn and accessToken are provided
   if (!modelUrn || !accessToken) {
-    return res.status(400).send("Missing modelUrn or accessToken");
+    console.log("Access Token:", window.accessToken);
+    console.log("Model URN:", window.modelUrn);
+
+    return res
+      .status(400)
+      .send(
+        "Missing modelUrn or accessToken" +
+          "accessToken" +
+          window.accessToken +
+          "modelUrn" +
+          window.modelUrn
+      );
   }
 
   try {
