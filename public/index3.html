@@ -1,52 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Autodesk Forge Viewer</title>
-    <!-- Corrected Viewer Script URL with version 6.6.4 -->
-    <script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/6.6.4/viewer3D.min.js"></script>
+    <meta
+      name="viewport"
+      content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=no"
+    />
+    <meta charset="utf-8" />
+
+    <!-- The Viewer CSS -->
+    <link
+      rel="stylesheet"
+      href="https://developer.api.autodesk.com/modelderivative/v2/viewers/2.*/style.min.css"
+      type="text/css"
+    />
+
+    <!-- Developer CSS -->
+    <style>
+      body {
+        margin: 0;
+      }
+      #MyViewerDiv {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        background-color: #f0f8ff;
+      }
+    </style>
   </head>
   <body>
-    <!-- Container for the Forge Viewer -->
-    <div id="forgeViewer" style="width: 100%; height: 100vh"></div>
+    <!-- The Viewer will be instantiated here -->
+    <div id="MyViewerDiv"></div>
 
+    <!-- The Viewer JS -->
+    <script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/2.*/three.min.js"></script>
+    <script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/2.*/viewer3D.min.js"></script>
+
+    <!-- Developer JS -->
     <script>
-      // Check if access token and model URN are defined
-      if (!window.accessToken || !window.modelUrn) {
+      var viewer;
+      var options = {
+        env: "AutodeskProduction",
+        accessToken: "",
+      };
+
+      // Get the access token and model URN passed from Xamarin
+      var urlParams = new URLSearchParams(window.location.search);
+      var accessToken = urlParams.get("accessToken");
+      var modelUrn = urlParams.get("modelUrn");
+
+      if (!accessToken || !modelUrn) {
         console.error("Access Token or Model URN is missing!");
-        alert(
-          "Access Token or Model URN is missing! Please check your configuration."
-        );
       } else {
-        // Viewer initialization options
-        var options = {
-          env: "AutodeskProduction", // Specify environment
-          getAccessToken: function (onGetAccessToken) {
-            // Provide access token to the viewer
-            onGetAccessToken(window.accessToken, 3600); // Use window-scoped token variable
-          },
-        };
+        options.accessToken = accessToken;
+        var documentId = "urn:" + modelUrn;
 
-        // Initialize the Autodesk Viewer
-        Autodesk.Viewing.Initializer(options, function () {
-          var viewerDiv = document.getElementById("forgeViewer"); // Get the viewer container
-          var viewer = new Autodesk.Viewing.GuiViewer3D(viewerDiv); // Create the viewer instance
-
-          // Load the model using the URN
+        Autodesk.Viewing.Initializer(options, function onInitialized() {
           Autodesk.Viewing.Document.load(
-            "urn:" + window.modelUrn, // Load model using URN (use window-scoped URN variable)
-            function (doc) {
-              var viewables = doc.getRoot().getDefaultGeometry(); // Get the default geometry
-              viewer.start(); // Start the viewer
-              viewer.loadDocumentNode(doc, viewables); // Load the document into the viewer
-            },
-            function (errorMsg) {
-              console.error("Error loading model: " + errorMsg); // Error handling
-              alert("Error loading model: " + errorMsg); // Show alert if model fails to load
-            }
+            documentId,
+            onDocumentLoadSuccess,
+            onDocumentLoadFailure
           );
         });
+      }
+
+      /**
+       * Autodesk.Viewing.Document.load() success callback.
+       * Proceeds with model initialization.
+       */
+      function onDocumentLoadSuccess(doc) {
+        // A document contains references to 3D and 2D viewables.
+        var viewables = Autodesk.Viewing.Document.getSubItemsWithProperties(
+          doc.getRootItem(),
+          { type: "geometry" },
+          true
+        );
+        if (viewables.length === 0) {
+          console.error("Document contains no viewables.");
+          return;
+        }
+
+        // Choose any of the available viewables
+        var initialViewable = viewables[0];
+        var svfUrl = doc.getViewablePath(initialViewable);
+        var modelOptions = {
+          sharedPropertyDbPath: doc.getPropertyDbPath(),
+        };
+
+        var viewerDiv = document.getElementById("MyViewerDiv");
+        viewer = new Autodesk.Viewing.Private.GuiViewer3D(viewerDiv);
+        viewer.start(
+          svfUrl,
+          modelOptions,
+          onLoadModelSuccess,
+          onLoadModelError
+        );
+      }
+
+      /**
+       * Autodesk.Viewing.Document.load() failure callback.
+       */
+      function onDocumentLoadFailure(viewerErrorCode) {
+        console.error("onDocumentLoadFailure() - errorCode:" + viewerErrorCode);
+      }
+
+      /**
+       * viewer.loadModel() success callback.
+       * Invoked after the model's SVF has been initially loaded.
+       * It may trigger before any geometry has been downloaded and displayed on-screen.
+       */
+      function onLoadModelSuccess(model) {
+        console.log("onLoadModelSuccess()!");
+        console.log("Validate model loaded: " + (viewer.model === model));
+        console.log(model);
+      }
+
+      /**
+       * viewer.loadModel() failure callback.
+       * Invoked when there's an error fetching the SVF file.
+       */
+      function onLoadModelError(viewerErrorCode) {
+        console.error("onLoadModelError() - errorCode:" + viewerErrorCode);
       }
     </script>
   </body>
