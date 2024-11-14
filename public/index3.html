@@ -16,14 +16,46 @@
 
     <!-- Developer CSS -->
     <style>
+      /* Body styling */
       body {
         margin: 0;
+        font-family: Arial, sans-serif;
+        overflow: hidden;
       }
+
+      /* Container for the viewer */
       #MyViewerDiv {
-        width: 100%;
-        height: 100%;
+        width: 100vw; /* Full width of viewport */
+        height: 100vh; /* Full height of viewport */
         margin: 0;
         background-color: #f0f8ff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: absolute; /* Fix to make sure it's on top of other content */
+        top: 0;
+        left: 0;
+      }
+
+      /* For small mobile devices: Adjusting height for taller screens */
+      @media (max-width: 600px) {
+        #MyViewerDiv {
+          height: 90vh; /* 90% of viewport height for small screens */
+        }
+      }
+
+      /* For large desktop screens, ensure no stretching of viewer */
+      @media (min-width: 1200px) {
+        #MyViewerDiv {
+          width: 100%;
+          height: 100%;
+        }
+      }
+
+      /* Styling the viewer's content for any specific styling needs */
+      .viewer {
+        width: 100%;
+        height: 100%;
       }
     </style>
   </head>
