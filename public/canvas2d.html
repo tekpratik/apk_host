@@ -1,0 +1,122 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.5, maximum-scale=5.0, user-scalable=yes">
+    <title>Fabric.js Canvas</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        canvas {
+            border: 1px solid #ccc;
+            max-width: 100%;
+            max-height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvasId"></canvas>
+
+    <script>const canvas = new fabric.Canvas('canvasId', { selection: false, allowTouchScrolling: true });
+
+        // Resize canvas dynamically
+        function resizeCanvas() {
+            canvas.setWidth(window.innerWidth * 1);
+            canvas.setHeight(window.innerHeight * 1);
+            canvas.renderAll();
+        }
+        window.addEventListener("resize", resizeCanvas);
+
+        resizeCanvas();
+
+        function loadCanvasFromJSON(jsonString) {
+            try {
+                var json = JSON.parse(jsonString);
+                canvas.loadFromJSON(json, function () {
+                    canvas.renderAll();
+
+                    canvas.forEachObject(function (object) {
+                        object.set({
+                            selectable: true,
+                            hasControls: false,
+                            lockMovementX: true,
+                            lockMovementY: true,
+                            lockScalingX: false,
+                            lockScalingY: false,
+                            lockRotation: true
+                        });
+                    });
+                });
+
+            } catch (error) {
+                console.error("Error in loadCanvasFromJSON:", error);
+            }
+        }
+
+        // Mouse down event listener
+        canvas.on('mouse:down', function (e) {
+            const clickedObject = e.target;
+            if (clickedObject) {
+                if (window.AndroidInterface) {
+                    window.AndroidInterface.onModelObjectSelected(clickedObject.uuid);
+                }
+            }
+        });
+
+        // Set up Hammer.js for touch gestures
+        const hammer = new Hammer(canvas.upperCanvasEl);
+
+        // Enable pinch and pan gestures
+        hammer.get('pinch').set({ enable: true });
+        hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL });
+
+        let lastZoom = canvas.getZoom();
+        let lastPan = { x: 0, y: 0 };  // Initialize lastPan here
+
+        // Handle pinch-to-zoom with Hammer.js
+        hammer.on('pinch', function (event) {
+            const zoom = lastZoom * event.scale;
+
+            // Limit zooming between 0.5x and 3x
+            canvas.setZoom(Math.max(0.5, Math.min(zoom, 5)));
+            canvas.requestRenderAll();
+        });
+
+        // Update the lastZoom when the pinch ends
+        hammer.on('pinchend', function () {
+            lastZoom = canvas.getZoom();
+        });
+
+        // Pan gesture for panning
+        hammer.on('panmove', (event) => {
+            const deltaX = event.deltaX - lastPan.x;
+            const deltaY = event.deltaY - lastPan.y;
+
+            // Update canvas viewport for panning
+            const currentViewport = canvas.viewportTransform;
+            currentViewport[4] += deltaX;
+            currentViewport[5] += deltaY;
+
+            // Apply the new viewport transform
+            canvas.setViewportTransform(currentViewport);
+            canvas.requestRenderAll();
+
+            // Update last pan position
+            lastPan = { x: event.deltaX, y: event.deltaY };
+        });
+
+        hammer.on('panend', () => {
+            lastPan = { x: 0, y: 0 }; // Reset pan deltas
+        });</script>
+</body>
+</html>
